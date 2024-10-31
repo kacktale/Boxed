@@ -150,7 +150,8 @@ MonoBehaviour:
   Synchronization: 3
   OwnershipTransfer: 0
   observableSearch: 2
-  ObservedComponents: []
+  ObservedComponents:
+  - {fileID: -2719455585976920260}
   sceneViewId: 0
   InstantiationId: 0
   isRuntimeInstantiated: 0
@@ -167,3 +168,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   EnterPlayer: 0
+  changeRange: {fileID: 0}

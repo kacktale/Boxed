@@ -47,6 +47,10 @@ MonoBehaviour:
   - OnCollisionEnter2D
   - IncreaseEnterPlayerCount
   - StartGame
+  - TeleportPlayers
+  - ChangedRange
+  - FindRange
+  - ActivateAllPlayers
   DisableAutoOpenWizard: 1
   ShowSettings: 0
   DevRegionSetOnce: 1

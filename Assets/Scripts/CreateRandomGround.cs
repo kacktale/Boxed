@@ -1,6 +1,5 @@
 using Photon.Pun;
-using System.Collections;
-using System.Collections.Generic;
+using System.ComponentModel;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -22,7 +21,13 @@ public class CreateRandomGround : MonoBehaviour
     public Button GameStartbutton;
 
     public ChangeRange ChangeRange;
-    // Start is called before the first frame update
+    private PhotonView photonView;
+
+    private void Awake()
+    {
+        photonView = GetComponent<PhotonView>();
+    }
+
     void Start()
     {
         ErrorMessage.text = "";
@@ -30,72 +35,71 @@ public class CreateRandomGround : MonoBehaviour
         HidPosX = CurPosX;
     }
 
-    // Update is called once per frame
     void Update()
     {
-        //if(PhotonNetwork.PlayerList.Length == 2)
-        //{
-        //    if(!CreateGround)
-        //    {
-
-        //        CreateGround = true;
-        //    }
-        //}
         GameObject[] Players = GameObject.FindGameObjectsWithTag("Player");
         int CurPlayer = Players.Length;
         ColorBlock colorBlock = GameStartbutton.colors;
-        if (CurPlayer == 2)
-        {
-            colorBlock.normalColor = Color.green;
-            colorBlock.highlightedColor = Color.green;
-            colorBlock.pressedColor = new Color(0, 0.6666666f, 0.1437909f);
-            colorBlock.selectedColor = Color.green;
-            colorBlock.disabledColor = Color.green;
-        }
-        else
-        {
-            colorBlock.normalColor = Color.gray;
-            colorBlock.highlightedColor = Color.gray;
-            colorBlock.pressedColor = new Color(0, 0.6f, 0.7f);
-            colorBlock.selectedColor = Color.gray;
-            colorBlock.disabledColor = Color.gray;
-        }
+
+        colorBlock.normalColor = (CurPlayer == 2) ? Color.green : Color.gray;
+        colorBlock.highlightedColor = colorBlock.normalColor;
+        colorBlock.pressedColor = (CurPlayer == 2) ? new Color(0, 0.6666666f, 0.1437909f) : new Color(0, 0.6f, 0.7f);
+        colorBlock.selectedColor = colorBlock.normalColor;
+        colorBlock.disabledColor = colorBlock.normalColor;
+
         GameStartbutton.colors = colorBlock;
     }
-    [PunRPC]
+
     public void StartGame()
     {
-        GameObject[] Players = GameObject.FindGameObjectsWithTag("Player");
-        int CurPlayers = Players.Length;
-        if(CurPlayers == 2)
+        if (PhotonNetwork.PlayerList.Length == 2)
         {
-            Players[0].transform.position = new Vector3(-8.27f, -2.78f);
-            Players[1].transform.position = new Vector3(23.53f,-2.78f);
-            MakeNomalGround();
-            ChangeRange.Range = 1;
-            ChangeRange.ChangedRange();
+            photonView.RPC("TeleportPlayers", RpcTarget.All);
+            photonView.RPC("MakeNomalGround", RpcTarget.All);
+            photonView.RPC("FindRange", RpcTarget.All);
+            GameStartbutton.gameObject.SetActive(false);
         }
         else
         {
             ErrorTextAppear();
         }
     }
+
     private void ErrorTextAppear()
     {
         ErrorMessage.text = "플레이어 수가 부족하거나 너무 많습니다.";
-        Invoke("ErrorTextHide",2f);
+        Invoke("ErrorTextHide", 2f);
     }
+
     private void ErrorTextHide()
     {
         ErrorMessage.text = "";
     }
     [PunRPC]
+    void FindRange()
+    {
+        ChangeRange.Range = 2;
+    }
+
+    [PunRPC]
+    private void TeleportPlayers()
+    {
+        GameObject[] Players = GameObject.FindGameObjectsWithTag("Player");
+        if (Players.Length == 2)
+        {
+            Players[0].transform.position = new Vector3(-8.27f, -2.78f);
+            Players[1].transform.position = new Vector3(23.53f, -2.78f);
+        }
+    }
+
+    [PunRPC]
     public void MakeNomalGround()
     {
-        if (!CreateGround)
+        if (!CreateGround && PhotonNetwork.IsMasterClient)
         {
             Vector2 FirstPos = new Vector2(HidPosX, HidPosY);
             PhotonNetwork.Instantiate(ground.name, FirstPos, Quaternion.identity);
+
             for (int i = 0; i < MaxGroundSpawn; i++)
             {
                 float posX = Random.Range(-5, 5);
@@ -103,21 +107,37 @@ public class CreateRandomGround : MonoBehaviour
                 Vector2 pos = new Vector2(posX + CurPosX, posY + CurPosY);
                 CurPosY += posY;
                 CurPosX += posX;
-                PhotonNetwork.Instantiate("Ground", pos, Quaternion.identity);
+                PhotonNetwork.Instantiate(ground.name, pos, Quaternion.identity);
             }
-            MakeEndGround();
+            photonView.RPC("MakeEndGround", RpcTarget.All);
         }
     }
+
     [PunRPC]
     public void MakeEndGround()
     {
-        float posX = Random.Range(-2, 2);
-        float posY = Random.Range(3, 5);
-        Vector2 pos = new Vector2(posX, posY + CurPosY);
-        PhotonNetwork.Instantiate("EndGround", pos, Quaternion.identity);
-        CurPosY = HidPosY;
-        CurPosX = HidPosX;
-        CreateGround = true;
-        GameStartbutton.gameObject.SetActive(false);
+        if (PhotonNetwork.IsMasterClient)
+        {
+            float posX = Random.Range(-2, 2);
+            float posY = Random.Range(3, 5);
+            Vector2 pos = new Vector2(posX + CurPosX, posY + CurPosY);
+            PhotonNetwork.Instantiate(EndGround.name, pos, Quaternion.identity);
+
+            CurPosY = HidPosY;
+            CurPosX = HidPosX;
+            CreateGround = true;
+            GameStartbutton.gameObject.SetActive(false);
+        }
+    }
+    public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
+    {
+        if (stream.IsWriting)
+        {
+            stream.SendNext(ChangeRange.Range);
+        }
+        else
+        {
+            ChangeRange.Range = (int)stream.ReceiveNext();
+        }
     }
 }

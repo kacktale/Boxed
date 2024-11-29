@@ -48,21 +48,44 @@ public class CreateRandomGround : MonoBehaviour
         colorBlock.disabledColor = colorBlock.normalColor;
 
         GameStartbutton.colors = colorBlock;
+
+        if (Input.GetKeyDown(KeyCode.K))
+        {
+            CreateGround = false;
+            photonView.RPC("TeleportPlayers", RpcTarget.All);
+            photonView.RPC("MakeNomalGround", RpcTarget.All);
+            photonView.RPC("FindRange", RpcTarget.All);
+            GameStartbutton.gameObject.SetActive(false);
+        }
     }
 
     public void StartGame()
     {
         if (PhotonNetwork.PlayerList.Length == 2)
         {
+            photonView.RPC("DeleteGround", RpcTarget.All);
+            CreateGround = false;
             photonView.RPC("TeleportPlayers", RpcTarget.All);
             photonView.RPC("MakeNomalGround", RpcTarget.All);
             photonView.RPC("FindRange", RpcTarget.All);
-            GameStartbutton.gameObject.SetActive(false);
+            GameStartbutton.gameObject.transform.localScale = Vector3.zero;
         }
         else
         {
             ErrorTextAppear();
         }
+    }
+
+    [PunRPC]
+    private void DeleteGround()
+    {
+        foreach (var Ground in GameObject.FindGameObjectsWithTag("Ground"))
+        {
+            Destroy(Ground);
+        }
+
+        GameObject EndGround = GameObject.FindGameObjectWithTag("EndGround");
+        Destroy(EndGround);
     }
 
     private void ErrorTextAppear()

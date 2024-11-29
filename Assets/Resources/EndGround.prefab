@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: -2719455585976920260}
   m_Layer: 0
   m_Name: EndGround
-  m_TagString: Untagged
+  m_TagString: EndGround
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -169,3 +169,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   EnterPlayer: 0
   changeRange: {fileID: 0}
+  randomGround: {fileID: 0}
+  GameEnd: 0

@@ -14,12 +14,14 @@ public class EndGroundObj : MonoBehaviour, IPunObservable
 
     private bool EnterPing = false;
     public bool GameEnd = false;
+    public Sound sound;
 
     void Start()
     {
         photonView = GetComponent<PhotonView>();
         changeRange = FindAnyObjectByType<ChangeRange>();
         randomGround = FindAnyObjectByType<CreateRandomGround>();
+        sound = FindAnyObjectByType<Sound>();
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
@@ -29,7 +31,6 @@ public class EndGroundObj : MonoBehaviour, IPunObservable
             EnterPing = true;
             PlayerController pressPlayer = collision.gameObject.GetComponent<PlayerController>();
             pressPlayer.CantMove = true;
-            
             if (pressPlayer.isActive)
             {
                 photonView.RPC("IncreaseEnterPlayerCount", RpcTarget.AllBuffered);
@@ -44,26 +45,35 @@ public class EndGroundObj : MonoBehaviour, IPunObservable
     [PunRPC]
     private void IncreaseEnterPlayerCount()
     {
+        EnterPlayer++;
         if (EnterPing)
         {
-            EnterPlayer++;
             Debug.Log("플레이어가 들어왔습니다: " + EnterPlayer);
 
             if (EnterPlayer == 2 && !hasActivatedPlayers)
             {
                 GameEnd = true;
-                changeRange.Range = 3;
-                randomGround.GameStartbutton.gameObject.transform.localScale = Vector3.one;
                 photonView.RPC("CharacterMove", RpcTarget.AllBuffered);
+                photonView.RPC("ChangeRate", RpcTarget.AllBuffered);
             }
         }
     }
+    [PunRPC]
+    private void ChangeRate()
+    {
+        changeRange.Range = 3;
+        sound.PlayCard();
+    }
+
     [PunRPC]
     private void CharacterMove()
     {
         foreach(var Players in GameObject.FindGameObjectsWithTag("Player"))
         {
-            Debug.Log(Players);
+            changeRange.Range = 3;
+            randomGround.GameStartbutton.gameObject.transform.localScale = Vector3.one;
+            randomGround.RoundUI.localScale = Vector3.zero;
+            randomGround.CreateGround = false;
             PlayerController playerController = Players.GetComponent<PlayerController>();
             playerController.CantMove = false;
             Debug.Log("playerController.CantMove");

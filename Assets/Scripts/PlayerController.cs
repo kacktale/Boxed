@@ -15,9 +15,12 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
     Rigidbody2D rigid;
     public LayerMask layerMask;
     public bool isGround = false;
+    public bool Chatting = false;
     public bool isActive = true;
     public bool CantMove = false;
     private bool JumpKey = false;
+    private bool EndGroundEnter = false;
+    public bool NPCInteract = false;
     [Header("Buff")]
     public bool doubleJump = false;
     public int doblueJumpCount = 2;
@@ -26,12 +29,16 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
     public int doublePressCount = 2;
     [Header("Input")]
     public ChangeRange changeRange;
+    public RoundManager roundManager;
+    [Header("BangJang")]
+    public bool Master = false;
     // Start is called before the first frame update
     void Start()
     {
         photonView = GetComponent<PhotonView>();
         rigid = GetComponent<Rigidbody2D>();
         changeRange = FindAnyObjectByType<ChangeRange>();
+        roundManager = FindAnyObjectByType<RoundManager>();
 
         if (photonView.IsMine)
         {
@@ -51,7 +58,7 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
     void FixedUpdate()
     {
         float h = Input.GetAxisRaw("Horizontal");
-        if(!CantMove)
+        if(!CantMove && !Chatting)
         {
             if (photonView.IsMine)
             {
@@ -65,11 +72,11 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
         if (!CantMove)
         {
             RaycastHit2D MidgroundHit = Physics2D.Raycast(transform.position, Vector2.down, 0.6f, layerMask);
-            RaycastHit2D EndgroundHit = Physics2D.Raycast(transform.position + Vector3.right * 0.5f, Vector2.down, 0.6f, layerMask);
-            RaycastHit2D AnotherEndgroundHit = Physics2D.Raycast(transform.position + Vector3.left * 0.5f, Vector2.down, 0.6f, layerMask);
+            RaycastHit2D EndgroundHit = Physics2D.Raycast(transform.position + Vector3.right * 0.4f, Vector2.down, 0.6f, layerMask);
+            RaycastHit2D AnotherEndgroundHit = Physics2D.Raycast(transform.position + Vector3.left * 0.4f, Vector2.down, 0.6f, layerMask);
             Debug.DrawRay(transform.position, Vector3.down * 0.6f, Color.blue);
-            Debug.DrawRay(transform.position + Vector3.right * 0.5f, Vector3.down * 0.6f, Color.blue);
-            Debug.DrawRay(transform.position + Vector3.left * 0.5f, Vector3.down * 0.6f, Color.blue);
+            Debug.DrawRay(transform.position + Vector3.right * 0.4f, Vector3.down * 0.6f, Color.blue);
+            Debug.DrawRay(transform.position + Vector3.left * 0.4f, Vector3.down * 0.6f, Color.blue);
             if (MidgroundHit.collider || EndgroundHit.collider || AnotherEndgroundHit.collider)
             {
                 if (!JumpKey)
@@ -96,7 +103,7 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
                     isGround = false;
                 }
             }
-            if (photonView.IsMine && Input.GetKeyDown(KeyCode.Space) && isGround)
+            if (photonView.IsMine && Input.GetKeyDown(KeyCode.Space) && isGround && !Chatting)
             {
                 photonView.RPC("Jump", RpcTarget.All);
                 JumpKey = true;
@@ -104,6 +111,17 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
             if (Input.GetKeyUp(KeyCode.Space))
             {
                 JumpKey = false;
+            }
+            if (Input.GetKeyDown(KeyCode.Return))
+            {
+                if (Chatting)
+                {
+                    Chatting = false;
+                }
+                else
+                {
+                    Chatting = true;
+                }
             }
         }
     }
@@ -183,7 +201,41 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
     {
         if (collision.gameObject.CompareTag("EndGround"))
         {
+            EndGroundObj GoundSetting = collision.gameObject.GetComponent<EndGroundObj>();
+            Debug.Log(GoundSetting.gameObject);
+            if (GoundSetting.EnterPlayer == 1)
+            {
+                if (Master)
+                {
+                    roundManager.redWin++;
+                }
+                else if (!Master)
+                {
+                    roundManager.blueWin++;
+                }
+            }
             transform.position = new Vector3(58.82f, -46.75f);
+        }
+    }
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (collision.gameObject.CompareTag("NPC"))
+        {
+            NPCInteract = true;
+        }
+    }
+    public void OnCollisionExit2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("EndGround"))
+        {
+            EndGroundEnter = false;
+        }
+    }
+    private void OnTriggerExit2D(Collider2D collision)
+    {
+        if (collision.gameObject.CompareTag("NPC"))
+        {
+            NPCInteract = false;
         }
     }
 
@@ -195,12 +247,16 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
             stream.SendNext(isActive);
             stream.SendNext(doubleJump);
             stream.SendNext(doublePress);
+            stream.SendNext(roundManager.redWin);
+            stream.SendNext(roundManager.blueWin);
         }
         else
         {
             isActive = (bool)stream.ReceiveNext();
             doubleJump = (bool)stream.ReceiveNext();
             doublePress = (bool)stream.ReceiveNext();
+            roundManager.redWin = (int)stream.ReceiveNext();
+            roundManager.blueWin = (int)stream.ReceiveNext();
             gameObject.SetActive(isActive);
         }
     }

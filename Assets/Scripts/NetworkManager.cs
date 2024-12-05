@@ -32,7 +32,7 @@ public class NetworkManager : MonoBehaviourPunCallbacks
     {
         LoadingPannel.SetActive(false);
         Debug.Log("채팅 방에 입장했습니다.");
-        MaxPlayerList.text = "Max Players : " + PhotonNetwork.PlayerList.Length + "/" + 2;
+        MaxPlayerList.text = "u r " + PhotonNetwork.PlayerList.Length + "st place";
     }
     public void SetNick()
     {
@@ -46,7 +46,16 @@ public class NetworkManager : MonoBehaviourPunCallbacks
         int CurPlayer = Players.Length;
         if(CurPlayer == 1)
         {
+            SpriteRenderer color = Players[CurPlayer-1].GetComponent<SpriteRenderer>();
+            color.color = Color.red;
             OnlyMaster.SetActive(true);
+            PlayerController controller = Players[CurPlayer-1].GetComponent<PlayerController>();
+            controller.Master = true;
+        }
+        else if(CurPlayer == 2)
+        {
+            SpriteRenderer color = Players[CurPlayer - 1].GetComponent<SpriteRenderer>();
+            color.color = Color.blue;
         }
     }
 }

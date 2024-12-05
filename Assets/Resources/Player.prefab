@@ -133,13 +133,17 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 64
   isGround: 0
+  Chatting: 0
   isActive: 1
   CantMove: 0
+  NPCInteract: 0
   doubleJump: 0
   doblueJumpCount: 2
   doublePress: 0
   doublePressCount: 2
   changeRange: {fileID: 0}
+  roundManager: {fileID: 0}
+  Master: 0
 --- !u!114 &4393373222235820622
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -235,7 +239,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 932773295743050335}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1e7667371986c634caad45958cbc2c70, type: 3}
   m_Name: 

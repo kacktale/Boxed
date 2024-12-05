@@ -16,6 +16,7 @@ public class CreateRandomGround : MonoBehaviour
 
     public int MaxGroundSpawn;
     public bool CreateGround = false;
+    private bool FirstCreated = false;
 
     public TextMeshProUGUI ErrorMessage;
     public Button GameStartbutton;
@@ -23,6 +24,9 @@ public class CreateRandomGround : MonoBehaviour
     public ChangeRange ChangeRange;
     private PhotonView photonView;
 
+    public Transform RoundUI;
+    public NpcInteract NpcInteract;
+    public Sound sound;
     private void Awake()
     {
         photonView = GetComponent<PhotonView>();
@@ -49,25 +53,23 @@ public class CreateRandomGround : MonoBehaviour
 
         GameStartbutton.colors = colorBlock;
 
-        if (Input.GetKeyDown(KeyCode.K))
-        {
-            CreateGround = false;
-            photonView.RPC("TeleportPlayers", RpcTarget.All);
-            photonView.RPC("MakeNomalGround", RpcTarget.All);
-            photonView.RPC("FindRange", RpcTarget.All);
-            GameStartbutton.gameObject.SetActive(false);
-        }
+        //if (Input.GetKeyDown(KeyCode.K))
+        //{
+        //    CreateGround = false;
+        //    photonView.RPC("TeleportPlayers", RpcTarget.All);
+        //    photonView.RPC("MakeNomalGround", RpcTarget.All);
+        //    photonView.RPC("FindRange", RpcTarget.All);
+        //}
     }
 
     public void StartGame()
     {
         if (PhotonNetwork.PlayerList.Length == 2)
         {
-            photonView.RPC("DeleteGround", RpcTarget.All);
             CreateGround = false;
             photonView.RPC("TeleportPlayers", RpcTarget.All);
-            photonView.RPC("MakeNomalGround", RpcTarget.All);
             photonView.RPC("FindRange", RpcTarget.All);
+            photonView.RPC("MakeNomalGround", RpcTarget.All);
             GameStartbutton.gameObject.transform.localScale = Vector3.zero;
         }
         else
@@ -102,6 +104,15 @@ public class CreateRandomGround : MonoBehaviour
     void FindRange()
     {
         ChangeRange.Range = 2;
+        sound.PlayMain();
+        if (FirstCreated)
+        {
+            photonView.RPC("DeleteGround", RpcTarget.All);
+        }
+        else
+        {
+            FirstCreated = true;
+        }
     }
 
     [PunRPC]
@@ -149,18 +160,22 @@ public class CreateRandomGround : MonoBehaviour
             CurPosY = HidPosY;
             CurPosX = HidPosX;
             CreateGround = true;
-            GameStartbutton.gameObject.SetActive(false);
         }
+        RoundUI.localScale = Vector3.one;
+        NpcInteract.gameObject.SetActive(true);
+        NpcInteract.BuffGived = false;
     }
     public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
     {
         if (stream.IsWriting)
         {
             stream.SendNext(ChangeRange.Range);
+            stream.SendNext(FirstCreated);
         }
         else
         {
             ChangeRange.Range = (int)stream.ReceiveNext();
+            FirstCreated = (bool)stream.ReceiveNext();
         }
     }
 }

@@ -16,7 +16,7 @@ public class NpcInteract : MonoBehaviour
 
     private bool IsTouched = false;
     private bool IsShowed = false;
-    private bool BuffGived = false;
+    public bool BuffGived = false;
     private Vector3 targetPos;
     [SerializeField]
     private GameObject CollsionPlayer;
@@ -97,29 +97,33 @@ public class NpcInteract : MonoBehaviour
         {
             if (Input.GetKeyDown(KeyCode.E))
             {
-                if (!BuffGived)
+                PlayerController playerController = CollsionPlayer.GetComponent<PlayerController>();
+                if (playerController.NPCInteract)
                 {
-                    PlayerController playerController = CollsionPlayer.GetComponent<PlayerController>();
-                    if (!IsShowed)
+                    if (!BuffGived)
                     {
-                        pannelTransform.position = targetPos;
-                        IsShowed = true;
-                        playerController.CantMove = true;
-                    }
-                    else
-                    {
-                        switch (Selection)
+                        if (!IsShowed)
                         {
-                            case 0:
-                                playerController.doubleJump = true; break;
-                            case 1:
-                                photonView.RPC("DisableDoubleJumpForOthers", RpcTarget.Others); break;
+                            pannelTransform.position = targetPos;
+                            IsShowed = true;
+                            playerController.CantMove = true;
                         }
-                        pannelTransform.position -= new Vector3(0, 10000, 0);
-                        IsShowed = false;
-                        playerController.CantMove = false;
-                        BuffGived = true;
-                        gameObject.SetActive(false);
+                        else
+                        {
+                            switch (Selection)
+                            {
+                                case 0:
+                                    playerController.doubleJump = true; break;
+                                case 1:
+                                    photonView.RPC("DisableDoubleJumpForOthers", RpcTarget.Others); break;
+                            }
+                            pannelTransform.position -= new Vector3(0, 10000, 0);
+                            IsShowed = false;
+                            playerController.CantMove = false;
+                            BuffGived = true;
+                            gameObject.SetActive(false);
+                            CollsionPlayer.transform.position = new Vector3(49.32284f, -47.26411f, 0);
+                        }
                     }
                 }
             }

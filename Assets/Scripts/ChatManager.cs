@@ -9,7 +9,7 @@ public class ChatManager : MonoBehaviourPunCallbacks
     public InputField chatInput;
     public Text chatDisplay;
 
-    private bool IsChatAppear = false;
+    private bool IsChatAppear = true;
     // 방에 접속하면 호출됨
     public override void OnJoinedRoom()
     {
